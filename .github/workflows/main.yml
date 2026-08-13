@@ -1,0 +1,45 @@
+name: Build Nokia DCT3 APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract emulator source
+        run: |
+          unzip -q nokia-dct3-poco-x7-arm64-build.zip
+          echo "Extracted files:"
+          ls -la
+          ls -la nokia-dct3-emulator-main/android
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: |
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "cmake;3.22.1" "ndk;27.2.12479018"
+
+      - name: Make Gradle executable
+        run: chmod +x nokia-dct3-emulator-main/android/gradlew
+
+      - name: Build APK
+        working-directory: nokia-dct3-emulator-main/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nokia-DCT3-APK
+          path: nokia-dct3-emulator-main/android/app/build/outputs/apk/debug/app-debug.apk
